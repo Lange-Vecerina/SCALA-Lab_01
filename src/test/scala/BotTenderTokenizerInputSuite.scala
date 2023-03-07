@@ -30,4 +30,9 @@ class BotTenderTokenizerInputSuite extends AnyPropSpec with TableDrivenPropertyC
     property("inputting 'santé !'") {
         evaluateInput("santé !") should equal(true)
     }
+
+    // TESTS FOR spellCheckerService
+    property("checking spellchecker") {
+        spellCheckerSvc.getClosestWordInDictionary("_efef") should equal("_efef")
+    }
 }
