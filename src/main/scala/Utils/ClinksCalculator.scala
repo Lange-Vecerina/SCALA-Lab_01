@@ -10,7 +10,11 @@ object ClinksCalculator:
     * @return n!
     */
   // TODO - Part 1 Step 1
-  def factorial(n: Int): BigInt = ???
+  def factorial(n: Int): BigInt = {
+    n match
+      case 0 => 1
+      case _ => n * factorial(n-1) 
+  }
 
   /**
     * Calculate the combination of two given numbers
@@ -19,5 +23,8 @@ object ClinksCalculator:
     * @return n choose k
     */
   // TODO - Part 1 Step 1
-  def calculateCombination(n: Int, k: Int): Int = ???
+  def calculateCombination(n: Int, k: Int): Int = {
+    val result = (factorial(n) / (factorial(k) * factorial(n -k))).toInt
+    result
+  }
 end ClinksCalculator

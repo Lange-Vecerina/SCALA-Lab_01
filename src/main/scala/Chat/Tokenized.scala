@@ -10,7 +10,30 @@ trait Tokenized:
     */
   def nextToken(): (String, Token)
 
+  private var index = 0
+
+object Tokenized {
+  private var counter = 0
+  def increment = {
+    counter += 1
+    counter
+  }
+  def reset = {
+    counter = 0
+  }
+}
 class TokenizedImpl(val tokens: Array[(String, Token)]) extends Tokenized:
   // TODO - Part 1 Step 3
-  def nextToken(): (String, Token) = ???
+   
+   
+   def nextToken(): (String, Token) = {
+    var index = Tokenized.increment -1
+    if (tokens.isEmpty || index >= tokens.length) {
+      Tokenized.reset
+      ("EOL", EOL)
+    } else {
+      val (str, token) = tokens(index)
+      (str, token)
+    }
+  } 
 end TokenizedImpl
