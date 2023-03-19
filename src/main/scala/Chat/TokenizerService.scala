@@ -10,24 +10,27 @@ class TokenizerService(spellCheckerSvc: SpellCheckerService):
     * @param input The user's input
     * @return A Tokenizer which allows iteration over the tokens of the input
     */
-  // TODO - Part 1 Step 3
   def tokenize(input: String): Tokenized = {
 
-    //removing punctuation and lowercasing
-    val inputWithoutPunctuationLowerCase = input.replaceAll("[.,;:!?*]", "").replaceAll("[\\']", " ").toLowerCase()
- 
-    //splitting the input on whitespaceS
-    val tokens = inputWithoutPunctuationLowerCase.split(" ")
+    // Cleaning the input
+    val cleanedInput = input.replaceAll("[.,;:!?*]", "").replaceAll("\\'", " ").trim.replaceAll("\\s+", " ").toLowerCase()
+    
+    // Splitting the cleaned input into strings to tokenize
+    val tokens = cleanedInput.split(" ")
 
-    //mapping the tokens to their corresponding token, if the token is not in the dictionary, it is replaced by the closest word in the dictionary
+    // Converting the tokens into a tuple of (String, Token)
     val tokenized = tokens.map(token => {
       if(stringToTokenTuple(token)._2 == UNKNOWN) {
+        // If the token is not in the dictionary, we correct it with the spell checker
         val corrected = spellCheckerSvc.getClosestWordInDictionary(token) 
-            stringToTokenTuple(corrected)
-        } else {
-          stringToTokenTuple(token)
-        }
+        stringToTokenTuple(corrected) // We return the corrected string's tuple
+      } else {
+        // If the token is in the dictionary, we return its tuple
+        stringToTokenTuple(token)
+      }
     })
+
+    // Adding the EOL token at the end of the array
     new TokenizedImpl(tokenized)
   }
 
