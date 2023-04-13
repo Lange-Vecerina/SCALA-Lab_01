@@ -1,5 +1,7 @@
 package Data
 
+import scala.collection.immutable.SortedMap
+
 trait ProductService:
   type BrandName = String
   type ProductName = String
@@ -8,37 +10,30 @@ trait ProductService:
   def getDefaultBrand(product: ProductName): BrandName
 
 class ProductImpl extends ProductService:
-  // TODO - Part 2 Step 
-  private val products : Map[ProductName, Map[BrandName, Double]] = Map(
-    "biere" -> Map(
-      "boxer" -> 1.00,
-      "farmer" -> 1.00,
-      "wittekop" -> 2.00,
-      "punkipa" -> 3.00,
-      "jackhammer" -> 3.00,
-      "tenebreuse" -> 4.00,
-    ),
-    "croissant" -> Map(
-      "maison" -> 2.00,
-      "cailler" -> 2.00,
-    )
+  // Store in a map the price of each product for each brand
+  // If we have a lot of products, we should use a database
+  private val products : Map[(ProductName, BrandName), Double] = Map(
+    ("biere", "boxer") -> 1.00,
+    ("biere", "farmer") -> 1.00,
+    ("biere", "wittekop") -> 2.00,
+    ("biere", "punkipa") -> 3.00,
+    ("biere", "jackhammer") -> 3.00,
+    ("biere", "tenebreuse") -> 4.00,
+    ("croissant", "maison") -> 2.00,
+    ("croissant", "cailler") -> 2.00,
+  )
+
+  private val defaultBrands : Map[ProductName, BrandName] = Map(
+    "biere" -> "boxer",
+    "croissant" -> "maison"
   )
 
   def getPrice(product: ProductName, brand: String): Double = 
-    products.get(product).flatMap(_.get(brand)).getOrElse(0.0)
+    // if the brand is not specified, we use the default brand
+    val brandName = if brand.isEmpty then getDefaultBrand(product) else brand
+    products.get((product, brandName)).getOrElse(0.0)
+
   def getDefaultBrand(product: ProductName): BrandName = 
-    products.get(product).map(_.head._1).getOrElse("")
+    defaultBrands.get(product).getOrElse("")
+
 end ProductImpl
-
-
-// test
-@main def testProductService(): Unit =
-  val productService = ProductImpl()
-  println(productService.getPrice("biere", "boxer"))
-  println(productService.getPrice("biere", "farmer"))
-  println(productService.getPrice("biere", "wittekop"))
-  println(productService.getPrice("biere", "punkipa"))
-  println(productService.getPrice("biere", "jackhammer"))
-  println(productService.getPrice("biere", "tenebreuse"))
-  println(productService.getPrice("croissant", "maison"))
-  println(productService.getPrice("croissant", "cai
