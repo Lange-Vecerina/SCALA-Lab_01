@@ -15,12 +15,7 @@ class AnalyzerService(productSvc: ProductService,
     case GetPrice(products) => computePrice(products)
     case Order(products) => computePrice(products)
     case And(left, right) => computePrice(left) + computePrice(right)
-    case Or(left, right) => computePrice(left) + computePrice(right)
-    /*case Identify(pseudo) => 0.0
-    case GetBalance => 0.0
-    case Hello => 0.0
-    case Thirsty => 0.0
-    case Hungry => 0.0*/
+    case Or(left, right) => computePrice(left).min(computePrice(right))
     case Product(name, brand, quantity) => productSvc.getPrice(name, brand) * quantity
     case _ => 0.0
   }
@@ -41,7 +36,7 @@ class AnalyzerService(productSvc: ProductService,
         if !accountSvc.isAccountExisting(pseudo) then
           accountSvc.addAccount(pseudo, 30.0)
         session.setCurrentUser(pseudo)
-        s"Bonjour, $pseudo !"
+        s"Bonjour, ${pseudo.tail} !"
       }
       case GetBalance => {
         session.getCurrentUser match {
@@ -59,12 +54,17 @@ class AnalyzerService(productSvc: ProductService,
               s"Vous n'avez pas assez d'argent sur votre compte pour effectuer cette commande."
             else {
               accountSvc.purchase(user, price)
-              s"Votre commande a bien été prise en compte ! Cela coûte CHF ${computePrice(products)} et votre solde est maintenant de CHF ${accountSvc.getAccountBalance(user)}."
+              s"Voici donc ${reply(session)(products)} ! Cela coûte CHF ${computePrice(products)} et votre nouveau solde est de CHF ${accountSvc.getAccountBalance(user)}."
             }
           }
         }
       }
-      //case Product(name, brand, quantity) => s"Vous avez commandé $quantity $name de la marque $brand ce qui donne un total de ${computePrice(p)}!"
       case Hello => "Bonjour !"
+      case And(left, right) => s"${reply(session)(left)} et ${reply(session)(right)}"
+      case Or(left, right) => if computePrice(left) < computePrice(right) then reply(session)(left) else reply(session)(right)
+      case Product("biere", "", quantity) => s"$quantity ${productSvc.getDefaultBrand("biere")}"
+      case Product("biere", brand, quantity) => s"$quantity $brand"
+      case Product(name, "", quantity) => s"$quantity $name ${productSvc.getDefaultBrand(name)}"
+      case Product(name, brand, quantity) => s"$quantity $name $brand"
       case _ => "Je n'ai pas compris votre demande, pouvez-vous reformuler ?"
 end AnalyzerService

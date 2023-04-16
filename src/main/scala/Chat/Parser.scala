@@ -33,27 +33,20 @@ class Parser(tokenized: Tokenized):
   /** the root method of the parser: parses an entry phrase */
   // TODO - Part 2 Step 4
   def parsePhrases() : ExprTree =
-    println(curToken)
     if curToken == BONJOUR then readToken()
-    println(curToken)
     if curToken == JE then
-      readToken()
+      eat(JE)
       if curToken == ETRE then
-        readToken()
-        if curToken == ASSOIFFE then
-          readToken()
-          Thirsty
-        else if curToken == AFFAME then
-          readToken()
-          Hungry  
-        else if curToken == PSEUDO then
-          Identify(eat(PSEUDO))
-        else expected(ASSOIFFE, AFFAME, PSEUDO)
+        eat(ETRE)
+        curToken match
+          case ASSOIFFE => eat(ASSOIFFE); Thirsty
+          case AFFAME => eat(AFFAME); Hungry
+          case PSEUDO => Identify(eat(PSEUDO))
+          case _ => expected(ASSOIFFE, AFFAME, PSEUDO)
       else if curToken == VOULOIR then
-        println(curToken)
         parseVouloir()
       else if curToken == ME then
-        readToken()
+        eat(ME)
         eat(APPELLER)
         Identify(eat(PSEUDO))
       else expected(ETRE, VOULOIR, ME)
@@ -61,23 +54,24 @@ class Parser(tokenized: Tokenized):
       eat(ETRE)
       eat(LE)
       eat(PRIX)
-      //eat(DE)
-      parseCommand()
+      eat(DE)
+      val command = parseCommand()
+      GetPrice(command)
     else if curToken == COMBIEN then
       eat(COMBIEN)
-      //eat(COUTER)
-      parseCommand()
+      eat(COUTER)
+      val command = parseCommand()
+      GetPrice(command)
     else expected(BONJOUR, JE, QUEL, COMBIEN)
 
 
 
   def parseVouloir() : ExprTree = 
-    println("parseVouloir")
-    println(curToken)
     eat(VOULOIR)
     if curToken == COMMANDER then
-      //eat(COMMANDER)
-      parseCommand()
+      eat(COMMANDER)
+      val command = parseCommand()
+      Order(command)
     else if curToken == CONNAITRE then
       readToken()
       eat(MON) 
@@ -85,44 +79,32 @@ class Parser(tokenized: Tokenized):
       GetBalance
     else expected(COMMANDER, CONNAITRE)
     
-  //def parse
 
-  
+  def parseProduct() : ExprTree =
+    val quantity = eat(NUM).toInt
+    val product = eat(PRODUIT)
+    if curToken == MARQUE then
+      val brand = eat(MARQUE)
+      Product(product, brand, quantity)
+    else Product(product, "", quantity)
+
   def parseCommand() : ExprTree =
-    println("parseCommand")
-    var typeOfCommand = curToken
-    readToken()
-    if curToken == NUM then
-      println(curToken)
-      var quantity = eat(NUM).toInt
-      println(curToken)
-      var product = eat(PRODUIT)
-      var brand = curToken match
-        case MARQUE => eat(MARQUE)
-        case _ => ""
-      println(curToken)
-      if curToken == ET then
-        readToken()
-        quantity += eat(NUM).toInt
-        product = eat(PRODUIT)
-        brand = eat(MARQUE)
-        parseCommand()
-      else if curToken == OU then
-        readToken()
-        quantity += eat(NUM).toInt
-        product = eat(PRODUIT)
-        brand = eat(MARQUE)
-        parseCommand()
-      else if curToken == EOL then
-        println("end of line")
-        readToken()
-        if typeOfCommand == COMMANDER then
-          Order(Product(product, brand, quantity))
-        else if typeOfCommand == COUTER || typeOfCommand == DE then
-          GetPrice(Product(product, brand, quantity))
-        else expected(COMMANDER, COUTER, DE)
-      else expected(ET, OU, EOL)
-    else expected(NUM)
+    val first = parseProduct()
+    curToken match
+      case ET => 
+        eat(ET)
+        val second = parseProduct()
+        And(first, second)
+      case OU => 
+        eat(OU)
+        val second = parseProduct()
+        Or(first, second)
+      case EOL => 
+        eat(EOL)
+        first
+      case _ => expected(ET, OU, EOL)
+
+end Parser
 
 
       

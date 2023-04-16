@@ -24,9 +24,7 @@ class TokenizerService(spellCheckerSvc: SpellCheckerService):
     val tokenized = tokens.map(token => {
       if(stringToTokenTuple(token)._2 == UNKNOWN) {
         // If the token is not in the dictionary, we correct it with the spell checker
-        println(s"Token $token not found in dictionary, correcting it…")
         val corrected = spellCheckerSvc.getClosestWordInDictionary(token) 
-        println(s"Token $token corrected to $corrected")
         stringToTokenTuple(corrected) // We return the corrected string's tuple
       } else {
         // If the token is in the dictionary, we return its tuple
@@ -79,6 +77,8 @@ class TokenizerService(spellCheckerSvc: SpellCheckerService):
       case "tenebreuse" => ("tenebreuse", MARQUE)
       case "jackhammer" => ("jackhammer", MARQUE)
       case "wittekop" => ("wittekop", MARQUE)
+      case "maison" => ("maison", MARQUE)
+      case "cailler" => ("cailler", MARQUE)
 
       case number if number.matches("[0-9]+") => (number, NUM)
       case pseudo if pseudo.matches("_[a-zA-Z]+") => (pseudo, PSEUDO)
