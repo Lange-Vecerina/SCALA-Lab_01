@@ -61,11 +61,11 @@ class Parser(tokenized: Tokenized):
       eat(ETRE)
       eat(LE)
       eat(PRIX)
-      eat(DE)
+      //eat(DE)
       parseCommand()
     else if curToken == COMBIEN then
       eat(COMBIEN)
-      eat(COUTER)
+      //eat(COUTER)
       parseCommand()
     else expected(BONJOUR, JE, QUEL, COMBIEN)
 
@@ -76,7 +76,7 @@ class Parser(tokenized: Tokenized):
     println(curToken)
     eat(VOULOIR)
     if curToken == COMMANDER then
-      eat(COMMANDER)
+      //eat(COMMANDER)
       parseCommand()
     else if curToken == CONNAITRE then
       readToken()
@@ -86,9 +86,12 @@ class Parser(tokenized: Tokenized):
     else expected(COMMANDER, CONNAITRE)
     
   //def parse
+
+  
   def parseCommand() : ExprTree =
     println("parseCommand")
-    println(curToken)
+    var typeOfCommand = curToken
+    readToken()
     if curToken == NUM then
       println(curToken)
       var quantity = eat(NUM).toInt
@@ -113,8 +116,11 @@ class Parser(tokenized: Tokenized):
       else if curToken == EOL then
         println("end of line")
         readToken()
-        GetPrice(Product(product, brand, quantity))
-        Order(Product(product, brand, quantity))
+        if typeOfCommand == COMMANDER then
+          Order(Product(product, brand, quantity))
+        else if typeOfCommand == COUTER || typeOfCommand == DE then
+          GetPrice(Product(product, brand, quantity))
+        else expected(COMMANDER, COUTER, DE)
       else expected(ET, OU, EOL)
     else expected(NUM)
 
