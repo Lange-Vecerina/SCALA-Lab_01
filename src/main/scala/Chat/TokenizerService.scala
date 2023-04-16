@@ -24,7 +24,9 @@ class TokenizerService(spellCheckerSvc: SpellCheckerService):
     val tokenized = tokens.map(token => {
       if(stringToTokenTuple(token)._2 == UNKNOWN) {
         // If the token is not in the dictionary, we correct it with the spell checker
+        println(s"Token $token not found in dictionary, correcting it…")
         val corrected = spellCheckerSvc.getClosestWordInDictionary(token) 
+        println(s"Token $token corrected to $corrected")
         stringToTokenTuple(corrected) // We return the corrected string's tuple
       } else {
         // If the token is in the dictionary, we return its tuple
@@ -44,16 +46,40 @@ class TokenizerService(spellCheckerSvc: SpellCheckerService):
   def stringToTokenTuple(token: String): (String, Token) = {
     token match {
       case "bonjour" => ("bonjour", BONJOUR)
+      case "quel" => ("quel", QUEL)
+      case "le" => ("le", LE)
+      case "prix" => ("prix", PRIX)
+      case "de" => ("de", DE)
+      case "combien" => ("combien", COMBIEN)
       case "je" => ("je", JE)
+      case "me" => ("me", ME)
+      case "mon" => ("mon", MON)
+      case "solde" => ("solde", SOLDE)
       case "svp" => ("svp", SVP)
       case "assoiffe" => ("assoiffe", ASSOIFFE)
       case "affame" => ("affame", AFFAME)
+      //Actions
       case "etre" => ("etre", ETRE)
       case "vouloir" => ("vouloir", VOULOIR)
+      case "commander" => ("commander", COMMANDER)
+      case "connaitre" => ("connaitre", CONNAITRE)
+      case "couter" => ("coûter", COUTER)
+      case "appeler" => ("appeler", APPELLER)
+      // Logic Operators
       case "et" => ("et", ET)
       case "ou" => ("ou", OU)
+      // Products
+      case "produit" => ("produit", PRODUIT)
+      case "marque" => ("marque", MARQUE)
       case "croissant" => ("croissant", PRODUIT)
       case "biere" => ("biere", PRODUIT)
+      case "punkipa" => ("punkipa", MARQUE)
+      case "boxer" => ("boxer", MARQUE)
+      case "farmer" => ("farmer", MARQUE)
+      case "tenebreuse" => ("tenebreuse", MARQUE)
+      case "jackhammer" => ("jackhammer", MARQUE)
+      case "wittekop" => ("wittekop", MARQUE)
+
       case number if number.matches("[0-9]+") => (number, NUM)
       case pseudo if pseudo.matches("_[a-zA-Z]+") => (pseudo, PSEUDO)
       case _ => (token, UNKNOWN)

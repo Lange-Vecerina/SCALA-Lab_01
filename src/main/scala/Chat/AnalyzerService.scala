@@ -11,7 +11,19 @@ class AnalyzerService(productSvc: ProductService,
     * @return the result of the computation
     */
   // TODO - Part 2 Step 3
-  def computePrice(t: ExprTree): Double = ???
+  def computePrice(t: ExprTree): Double = t match {
+    case GetPrice(products) => computePrice(products)
+    case Order(products) => computePrice(products)
+    case And(left, right) => computePrice(left) + computePrice(right)
+    case Or(left, right) => computePrice(left) + computePrice(right)
+    /*case Identify(pseudo) => 0.0
+    case GetBalance => 0.0
+    case Hello => 0.0
+    case Thirsty => 0.0
+    case Hungry => 0.0*/
+    case Product(name, brand, quantity) => productSvc.getPrice(name, brand) * quantity
+    case _ => 0.0
+  }
 
   /**
     * Return the output text of the current node, in order to write it in console.
@@ -25,4 +37,34 @@ class AnalyzerService(productSvc: ProductService,
       // Example cases
       case Thirsty => "Eh bien, la chance est de votre côté, car nous offrons les meilleures bières de la région !"
       case Hungry => "Pas de soucis, nous pouvons notamment vous offrir des croissants faits maisons !"
+      case Identify(pseudo) => {
+        if !accountSvc.isAccountExisting(pseudo) then
+          accountSvc.addAccount(pseudo, 30.0)
+        session.setCurrentUser(pseudo)
+        s"Bonjour, $pseudo !"
+      }
+      case GetBalance => {
+        session.getCurrentUser match {
+          case None => "Veuillez d'abord vous identifier."
+          case Some(user) => s"Le montant acutel de votre solde est de CHF ${accountSvc.getAccountBalance(user)}."
+        }
+      }
+      case GetPrice(products) => s"Cela coûte CHF ${computePrice(products)}."
+      case Order(products) => {
+        session.getCurrentUser match {
+          case None => "Veuillez d'abord vous identifier."
+          case Some(user) => {
+            val price = computePrice(products)
+            if accountSvc.getAccountBalance(user) < price then
+              s"Vous n'avez pas assez d'argent sur votre compte pour effectuer cette commande."
+            else {
+              accountSvc.purchase(user, price)
+              s"Votre commande a bien été prise en compte ! Cela coûte CHF ${computePrice(products)} et votre solde est maintenant de CHF ${accountSvc.getAccountBalance(user)}."
+            }
+          }
+        }
+      }
+      //case Product(name, brand, quantity) => s"Vous avez commandé $quantity $name de la marque $brand ce qui donne un total de ${computePrice(p)}!"
+      case Hello => "Bonjour !"
+      case _ => "Je n'ai pas compris votre demande, pouvez-vous reformuler ?"
 end AnalyzerService

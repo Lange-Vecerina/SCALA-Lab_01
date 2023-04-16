@@ -33,15 +33,93 @@ class Parser(tokenized: Tokenized):
   /** the root method of the parser: parses an entry phrase */
   // TODO - Part 2 Step 4
   def parsePhrases() : ExprTree =
+    println(curToken)
     if curToken == BONJOUR then readToken()
+    println(curToken)
     if curToken == JE then
       readToken()
+      if curToken == ETRE then
+        readToken()
+        if curToken == ASSOIFFE then
+          readToken()
+          Thirsty
+        else if curToken == AFFAME then
+          readToken()
+          Hungry  
+        else if curToken == PSEUDO then
+          Identify(eat(PSEUDO))
+        else expected(ASSOIFFE, AFFAME, PSEUDO)
+      else if curToken == VOULOIR then
+        println(curToken)
+        parseVouloir()
+      else if curToken == ME then
+        readToken()
+        eat(APPELLER)
+        Identify(eat(PSEUDO))
+      else expected(ETRE, VOULOIR, ME)
+    else if curToken == QUEL then
       eat(ETRE)
-      if curToken == ASSOIFFE then
+      eat(LE)
+      eat(PRIX)
+      eat(DE)
+      parseCommand()
+    else if curToken == COMBIEN then
+      eat(COMBIEN)
+      eat(COUTER)
+      parseCommand()
+    else expected(BONJOUR, JE, QUEL, COMBIEN)
+
+
+
+  def parseVouloir() : ExprTree = 
+    println("parseVouloir")
+    println(curToken)
+    eat(VOULOIR)
+    if curToken == COMMANDER then
+      eat(COMMANDER)
+      parseCommand()
+    else if curToken == CONNAITRE then
+      readToken()
+      eat(MON) 
+      eat(SOLDE)
+      GetBalance
+    else expected(COMMANDER, CONNAITRE)
+    
+  //def parse
+  def parseCommand() : ExprTree =
+    println("parseCommand")
+    println(curToken)
+    if curToken == NUM then
+      println(curToken)
+      var quantity = eat(NUM).toInt
+      println(curToken)
+      var product = eat(PRODUIT)
+      var brand = curToken match
+        case MARQUE => eat(MARQUE)
+        case _ => ""
+      println(curToken)
+      if curToken == ET then
         readToken()
-        Thirsty
-      else if curToken == AFFAME then
+        quantity += eat(NUM).toInt
+        product = eat(PRODUIT)
+        brand = eat(MARQUE)
+        parseCommand()
+      else if curToken == OU then
         readToken()
-        Hungry
-      else expected(ASSOIFFE, AFFAME)
-    else expected(BONJOUR, JE)
+        quantity += eat(NUM).toInt
+        product = eat(PRODUIT)
+        brand = eat(MARQUE)
+        parseCommand()
+      else if curToken == EOL then
+        println("end of line")
+        readToken()
+        GetPrice(Product(product, brand, quantity))
+        Order(Product(product, brand, quantity))
+      else expected(ET, OU, EOL)
+    else expected(NUM)
+
+
+      
+
+
+
