@@ -42,7 +42,7 @@ class AccountImpl extends AccountService:
   def isAccountExisting(user: String): Boolean = accounts.contains(user)
   def purchase(user: String, amount: Double): Double = 
     val balance = getAccountBalance(user)
-    val newBalance = balance - amount
+    val newBalance = balance - amount // check if balance is enough is done by the caller
     accounts.put(user, newBalance)
     newBalance
 
