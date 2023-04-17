@@ -31,7 +31,6 @@ class Parser(tokenized: Tokenized):
     throw new UnexpectedTokenException(s"Expected: $expectedTokens, found: $curToken")
 
   /** the root method of the parser: parses an entry phrase */
-  // TODO - Part 2 Step 4
   def parsePhrases() : ExprTree =
     if curToken == BONJOUR then readToken()
     if curToken == JE then
@@ -65,7 +64,9 @@ class Parser(tokenized: Tokenized):
     else expected(BONJOUR, JE, QUEL, COMBIEN)
 
 
-
+  /** Intermediate method called when parsing the 'Vouloir' command
+   *  Parses the following token : COMMANDER, CONNAITRE
+   */
   def parseVouloir() : ExprTree = 
     eat(VOULOIR)
     if curToken == COMMANDER then
@@ -80,6 +81,9 @@ class Parser(tokenized: Tokenized):
     else expected(COMMANDER, CONNAITRE)
     
 
+  /** method called for parsing a product. eats NUM, PRODUIT and MARQUE (if it exists)
+   *  to give it as parameters in Product.
+   */
   def parseProduct() : ExprTree =
     val quantity = eat(NUM).toInt
     val product = eat(PRODUIT)
@@ -88,6 +92,10 @@ class Parser(tokenized: Tokenized):
       Product(product, brand, quantity)
     else Product(product, "", quantity)
 
+  /** method called for parsing a 'command' 
+   *  parses the following token : ET, OU, EOL.
+   *  returns first if there is one product, or a tree of And or Or if there is more than one product.
+   */
   def parseCommand() : ExprTree =
     val first = parseProduct()
     curToken match

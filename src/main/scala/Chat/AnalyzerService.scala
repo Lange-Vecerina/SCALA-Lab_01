@@ -10,7 +10,6 @@ class AnalyzerService(productSvc: ProductService,
     * For example if we had a "+" node, we would add the values of its two children, then return the result.
     * @return the result of the computation
     */
-  // TODO - Part 2 Step 3
   def computePrice(t: ExprTree): Double = t match {
     case GetPrice(products) => computePrice(products)
     case Order(products) => computePrice(products)
@@ -28,10 +27,12 @@ class AnalyzerService(productSvc: ProductService,
     // you can use this to avoid having to pass the session when doing recursion
     val inner: ExprTree => String = reply(session)
     t match
-      // TODO - Part 2 Step 3
-      // Example cases
+      // Entry cases
       case Thirsty => "Eh bien, la chance est de votre côté, car nous offrons les meilleures bières de la région !"
       case Hungry => "Pas de soucis, nous pouvons notamment vous offrir des croissants faits maisons !"
+      case Hello => "Bonjour !"
+
+      // User cases : Identification and balance
       case Identify(pseudo) => {
         if !accountSvc.isAccountExisting(pseudo) then
           accountSvc.addAccount(pseudo, 30.0)
@@ -44,6 +45,8 @@ class AnalyzerService(productSvc: ProductService,
           case Some(user) => s"Le montant acutel de votre solde est de CHF ${accountSvc.getAccountBalance(user)}."
         }
       }
+
+      // Product cases : get price and order.
       case GetPrice(products) => s"Cela coûte CHF ${computePrice(products)}."
       case Order(products) => {
         session.getCurrentUser match {
@@ -59,12 +62,15 @@ class AnalyzerService(productSvc: ProductService,
           }
         }
       }
-      case Hello => "Bonjour !"
+      
+      // Operator cases for more than one product.
       case And(left, right) => s"${reply(session)(left)} et ${reply(session)(right)}"
       case Or(left, right) => if computePrice(left) < computePrice(right) then reply(session)(left) else reply(session)(right)
+
+      // Product cases. Different types since the example given does not show 'biere' when there is a brand but 'croissant' when there is a type of croissant
       case Product("biere", "", quantity) => s"$quantity ${productSvc.getDefaultBrand("biere")}"
       case Product("biere", brand, quantity) => s"$quantity $brand"
       case Product(name, "", quantity) => s"$quantity $name ${productSvc.getDefaultBrand(name)}"
       case Product(name, brand, quantity) => s"$quantity $name $brand"
-      case _ => "Je n'ai pas compris votre demande, pouvez-vous reformuler ?"
+      case null => "Je n'ai pas compris votre demande, pouvez-vous reformuler ?"
 end AnalyzerService
