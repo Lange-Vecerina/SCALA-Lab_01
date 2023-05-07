@@ -9,6 +9,7 @@ sealed trait ExprTree
   * Declarations of the nodes' types.
   */
 object ExprTree: 
+  // Example cases
   case object Hello extends ExprTree
   case object Thirsty extends ExprTree
   case object Hungry extends ExprTree
