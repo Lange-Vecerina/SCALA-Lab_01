@@ -19,17 +19,30 @@ object Layouts:
         )
             
     }
+
+    def messageItem(author: String, content: String, mention: String) = {
+        div(cls := "msg")(
+            span(cls := "author")(author),
+            span(cls := "msg-content")(
+                span(cls := "mention")(mention),
+                content
+            ),
+        )
+    }
+
+    def messageBoard(messages: Seq[(String, String, String)]) = {
+        div(id := "boardMessage")(
+            // If messages is empty, then return a div with a message
+            if messages.isEmpty then
+                div(cls := "msg")("Please wait! the messages are loading !", textAlign.center)
+            else
+                messages.map(msg => messageItem(msg._1, msg._2, msg._3))
+        )
+    }
+
     def contentPage() = {
         div(cls := "content", id := "content")(
-            div(id := "boardMessage")(
-                div(cls := "msg", "Please wait! the messages are loading !", textAlign.center)(
-                    span(cls := "msg-cotent")(
-                        span(cls := "author", "Bot-tender")(
-                            span(cls := "author::after", "lol", content := "lol")
-                        ),
-                        span(cls := "mention")),
-                )   
-            ),
+            messageBoard(Seq.empty),
 
             form(id := "msgForm", action := "/send", method := "post")(
                 div(id := "errorDiv", cls := ".errorMsg"),
