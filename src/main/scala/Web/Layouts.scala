@@ -11,8 +11,11 @@ object Layouts:
     // You can use it to store your methods to generate ScalaTags.
 
 
-   
-    def navigationBar() = { 
+    /**
+      * This method generates the navigation bar.
+      * 
+      */
+    private def navigationBar() = { 
         nav(
             a(cls := "nav-brand")("Bot-tender"),
             div(cls := "nav-item")(a(href := "/login", "Log In"))
@@ -20,7 +23,12 @@ object Layouts:
             
     }
 
-    def messageItem(author: String, content: String, mention: String) = {
+
+    /**
+      * This method generates the message information such as author, mention and content of the message.
+      * 
+      */
+    private def messageItem(author: String, content: String, mention: String) = {
         div(cls := "msg")(
             span(cls := "author")(author),
             span(cls := "msg-content")(
@@ -30,7 +38,12 @@ object Layouts:
         )
     }
 
-    def messageBoard(messages: Seq[(String, String, String)]) = {
+    /**
+      * This method generates generates a default message when there is no message.
+      * Else, it generates the message information with the method messageItem.
+      * 
+      */
+    private def messageBoard(messages: Seq[(String, String, String)]) = {
         div(id := "boardMessage")(
             // If messages is empty, then return a div with a message
             if messages.isEmpty then
@@ -40,7 +53,11 @@ object Layouts:
         )
     }
 
-    def contentPage() = {
+    /**
+      * This method generates bottom part of the page (the input for the message and a send button to send it).
+      * 
+      */
+    private def contentPage() = {
         div(cls := "content", id := "content")(
             messageBoard(Seq.empty),
 
@@ -55,6 +72,12 @@ object Layouts:
     
     }
     
+    /**
+      * This method generates the complete page with all other functions above and loads and links the css and 
+      * js files to the html page.
+      * 
+      * 
+      */
     def welcomePage() = {
         html(
             head(
