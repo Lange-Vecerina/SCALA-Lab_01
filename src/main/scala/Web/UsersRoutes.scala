@@ -25,46 +25,43 @@ class UsersRoutes(accountSvc: AccountService,
     //
     // TODO - Part 3 Step 3d: Reset the current session and display a successful logout page.
 
+
+    /**
+      * The main route for login, redirects to the login/register page.
+      */
     @getSession(sessionSvc)
     @cask.get("/login")
     def connect()(session: Session) =
-        println("====> ln")
         Layouts.loginPage()
 
-    /*@cask.get("/logged")
-    def logged(username: String) =
-        println("====> logged")
-        Layouts.loginAndRegisterSuccessPage("Logged in successfully", username)
-
-    @cask.get("/registered")
-    def registered(username: String) =
-        println("====> registered")
-        Layouts.loginAndRegisterSuccessPage("Registered successfully", username)*/
-
-   
+    /**
+      * The logout route. Resets the session and redirects to the logout page.
+      *
+      */
     @getSession(sessionSvc)
     @cask.get("/logout")
     def logout()(session: Session) =
-        println("====> logout")
         session.reset()
         Layouts.logoutSuccessPage()
 
+    /**
+      * The user login post route. Checks if the login input is an account that already exists.
+      * If this is the case redirects to the success login page, else shows an error message.
+      */
     @getSession(sessionSvc)
     @cask.postForm("/login")
     def login(username : cask.FormValue)(session: Session) =
-        println("====> login")
-  
         accountSvc.isAccountExisting(username.value) match
             case true =>
-                println("====> login success")
                 session.setCurrentUser(username.value)
                 Layouts.loginAndRegisterSuccessPage("Logged In successfully", username.value)
-                //cask.Redirect("/logged")
-
             case false =>
-                println("====> login failed")
                 Layouts.loginPage(Some("The specified user does not exists"))
 
+    /**
+      * The user register post route. Checks if the register input is an account taht already exists.
+      * If this is the case shows an error message, else redirects to the success register page.
+      */
     @getSession(sessionSvc)
     @cask.postForm("/register")
     def register(username: cask.FormValue)(session: Session) =
@@ -73,11 +70,7 @@ class UsersRoutes(accountSvc: AccountService,
                 Layouts.loginPage(Some("The specified user already exists"))
             case false =>
                 accountSvc.addAccount(username.value, 0.0)
-                //val session = sessionSvc.create()
                 session.setCurrentUser(username.value)
-                //val currentsession = Decorators.getSession(sessionSvc)
-                //println(currentsession)
-                //val cookie = cask.Cookie("username", username.value)
                 Layouts.loginAndRegisterSuccessPage("Registered successfully", username.value)   
 
     initialize()

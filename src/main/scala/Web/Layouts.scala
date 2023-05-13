@@ -57,17 +57,19 @@ object Layouts:
     private def contentPage() = {
         div(cls := "content", id := "content")(
             messageBoard(Seq.empty),
-
-            /*form(id := "msgForm", action := "/send", method := "post")(
-                div(id := "errorDiv", cls := ".errorMsg"),
-                label(`for` := "messageInput")("Your message:"),
-                input(id := "messageInput", `type` := "text", placeholder := "Write your message"),
-                input(id := "send", `type` := "submit", value := "Envoyer")
-            )*/
             inputForm("/send", "messageInput", "Your message:", "Write your message")
         )
     }
     
+    /**
+      * This method generates the input form.
+      *
+      * @param url The redirection url once the form submitted.
+      * @param labelTag The label of the form.
+      * @param labelMessage The text shown before the input. 
+      * @param placeholderStr The placeholder inside the input area.
+      * @return
+      */
     def inputForm(url: String, labelTag: String, labelMessage: String, placeholderStr: String) = {
         form(id := "msgForm", action := url, method := "post")(
             div(id := "errorDiv", cls := ".errorMsg"),
@@ -75,13 +77,8 @@ object Layouts:
             input(id := labelTag, `type` := "text", name := labelTag, placeholder := placeholderStr),
             input(id := "send", `type` := "submit", value := "Envoyer")
         )
-
-        /*form(method := "post", action := "/login")(
-                    label(`for` := "username")("Username:"),
-                    input(`type` := "text", id := "username", name := "username"),
-                    br,
-                    input(`type` := "submit", value := "Login")*/
     }
+
     /**
       * This method generates the complete page with all other functions above and loads and links the css and 
       * js files to the html page.
@@ -105,6 +102,10 @@ object Layouts:
         )     
     }
         
+    /**
+      * This method generates the login/register page.
+      * 
+      */
     def loginPage(errorMessage: Option[String] = None) = {
         val errorTag = errorMessage match
             case Some(msg) => div(color.red, id := "errorDiv", cls := ".errorMsg", msg)
@@ -128,6 +129,10 @@ object Layouts:
         )
     }
 
+    /**
+      * This method generates the login or register success page with the success message of login or register and the username.
+      * 
+      */
     def loginAndRegisterSuccessPage(successMessage: String, username: String) = {
         html(
             head(
@@ -143,6 +148,10 @@ object Layouts:
         )
     }
 
+    /**
+      * This method generates the logout page
+      *
+      */
     def logoutSuccessPage() = {
         html(
             head(
