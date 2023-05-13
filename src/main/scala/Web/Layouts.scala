@@ -10,19 +10,16 @@ import scalatags.Text.tags2.nav
 object Layouts:
     // You can use it to store your methods to generate ScalaTags.
 
-
     /**
       * This method generates the navigation bar.
       * 
       */
-    private def navigationBar() = { 
+    private def navigationBar(ref : String, str : String) = { 
         nav(
             a(cls := "nav-brand")("Bot-tender"),
-            div(cls := "nav-item")(a(href := "/login", "Log In"))
-        )
-            
+            div(cls := "nav-item")(a(href := ref, str))
+        )         
     }
-
 
     /**
       * This method generates the message information such as author, mention and content of the message.
@@ -61,22 +58,34 @@ object Layouts:
         div(cls := "content", id := "content")(
             messageBoard(Seq.empty),
 
-            form(id := "msgForm", action := "/send", method := "post")(
+            /*form(id := "msgForm", action := "/send", method := "post")(
                 div(id := "errorDiv", cls := ".errorMsg"),
                 label(`for` := "messageInput")("Your message:"),
                 input(id := "messageInput", `type` := "text", placeholder := "Write your message"),
                 input(id := "send", `type` := "submit", value := "Envoyer")
-            )
+            )*/
+            inputForm("/send", "messageInput", "Your message:", "Write your message")
         )
-
-    
     }
     
+    def inputForm(url: String, labelTag: String, labelMessage: String, placeholderStr: String) = {
+        form(id := "msgForm", action := url, method := "post")(
+            div(id := "errorDiv", cls := ".errorMsg"),
+            label(`for` := labelTag)(labelMessage),
+            input(id := labelTag, `type` := "text", name := labelTag, placeholder := placeholderStr),
+            input(id := "send", `type` := "submit", value := "Envoyer")
+        )
+
+        /*form(method := "post", action := "/login")(
+                    label(`for` := "username")("Username:"),
+                    input(`type` := "text", id := "username", name := "username"),
+                    br,
+                    input(`type` := "submit", value := "Login")*/
+    }
     /**
       * This method generates the complete page with all other functions above and loads and links the css and 
       * js files to the html page.
-      * 
-      * 
+      *  
       */
     def welcomePage() = {
         html(
@@ -86,14 +95,63 @@ object Layouts:
                 script(src := "/static/resource/js/main.js")
             ),
             body(
-                navigationBar(),
+                navigationBar("/login", "Log In"),
                 contentPage()
             )
-        )
-
-        
-        
+        )     
     }
         
+    def loginPage(errorMessage: Option[String] = None) = {
+        val errorTag = errorMessage match
+            case Some(msg) => div(color.red, id := "errorDiv", cls := ".errorMsg", msg)
+            case None => div(id := "errorDiv", cls := ".errorMsg")()
+        html(
+            head(
+                tags2.title("Bot-tender"),
+                link(rel := "stylesheet", href := "/static/resource/css/main.css"),
+                script(src := "/static/resource/js/main.js")
+            ),
+            body(
+                navigationBar("/", "Go to message board"),
+                h1("Login"),
+
+                errorTag,
+                inputForm("/login", "username", "Username:", "Write your username"),
+      
+                h1("Register"),
+                inputForm("/register", "username", "Username:", "Write your username")
+            )
+        )
+    }
+
+    def loginSuccessPage(username: String) = {
+        html(
+            head(
+                tags2.title("Bot-tender"),
+                link(rel := "stylesheet", href := "/static/resource/css/main.css"),
+                script(src := "/static/resource/js/main.js")
+            ),
+            body(
+                navigationBar("/", "Go to message board"),
+                h1("Login Success"),
+                h2("Welcome " + username)
+            )
+        )
+    }
+
+    def loginFailedPage() = {
+        html(
+            head(
+                tags2.title("Bot-tender"),
+                link(rel := "stylesheet", href := "/static/resource/css/main.css"),
+                script(src := "/static/resource/js/main.js")
+            ),
+            body(
+                navigationBar("/", "Go to message board"),
+                h1("Login Failed")
+            )
+        )
+    }
+
        
 end Layouts

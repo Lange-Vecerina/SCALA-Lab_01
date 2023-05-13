@@ -24,5 +24,41 @@ class UsersRoutes(accountSvc: AccountService,
     //
     // TODO - Part 3 Step 3d: Reset the current session and display a successful logout page.
 
+    @cask.get("/login")
+    def connect() =
+        println("====> ln")
+        Layouts.loginPage()
+
+    @cask.postForm("/login")
+    def login(username : cask.FormValue) =
+        println("====> login")
+        println(Decorators.getSession(sessionSvc))  
+        println(sessionSvc.get("username"))
+        println(username)
+        println(username.value)
+        accountSvc.isAccountExisting(username.value) match
+            case true =>
+                println("====> login success")
+                val session = sessionSvc.create()
+                Layouts.loginSuccessPage(username.value)
+                //println(Decorators.getSession(sessionSvc).toString())
+            case false =>
+                println("====> login failed")
+                //Layouts.loginFailedPage()
+                //cask.Response(Layouts.loginPage(Some("The specified user does not exists")))
+                Layouts.loginPage(Some("The specified user does not exists"))
+
+    @cask.postForm("/register")
+    def register(username: cask.FormValue) =
+        accountSvc.isAccountExisting(username.value) match
+            case true =>
+                Layouts.loginPage(Some("The specified user already exists"))
+            case false =>
+                accountSvc.addAccount(username.value, 0.0)
+                val session = sessionSvc.create()
+                session.setCurrentUser(username.value)
+                val cookie = cask.Cookie("username", username.value)
+                Layouts.loginSuccessPage(username.value)
+                
     initialize()
 end UsersRoutes
