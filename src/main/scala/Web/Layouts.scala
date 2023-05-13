@@ -87,7 +87,11 @@ object Layouts:
       * js files to the html page.
       *  
       */
-    def welcomePage() = {
+    def welcomePage(username: Option[String] = None) = {
+        val navBarInfo = username match
+            case Some(value) => ("/logout", "Hello "+ value + " ! ", "Log Out")
+            case None => ("/login", "", "Log In")
+
         html(
             head(
                 tags2.title("Bot-tender"),
@@ -95,7 +99,7 @@ object Layouts:
                 script(src := "/static/resource/js/main.js")
             ),
             body(
-                navigationBar("/login", "Log In"),
+                navigationBar(navBarInfo._1, navBarInfo._2 + navBarInfo._3),
                 contentPage()
             )
         )     
@@ -124,7 +128,7 @@ object Layouts:
         )
     }
 
-    def loginSuccessPage(username: String) = {
+    def loginAndRegisterSuccessPage(successMessage: String, username: String) = {
         html(
             head(
                 tags2.title("Bot-tender"),
@@ -133,8 +137,22 @@ object Layouts:
             ),
             body(
                 navigationBar("/", "Go to message board"),
-                h1("Login Success"),
+                h1(successMessage),
                 h2("Welcome " + username)
+            )
+        )
+    }
+
+    def logoutSuccessPage() = {
+        html(
+            head(
+                tags2.title("Bot-tender"),
+                link(rel := "stylesheet", href := "/static/resource/css/main.css"),
+                script(src := "/static/resource/js/main.js")
+            ),
+            body(
+                navigationBar("/", "Go to message board"),
+                h1("Logged out")
             )
         )
     }

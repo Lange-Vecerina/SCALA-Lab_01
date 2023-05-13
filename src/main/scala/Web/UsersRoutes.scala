@@ -1,6 +1,7 @@
 package Web
 
 import Data.{AccountService, SessionService, Session}
+import Web.Decorators.getSession
 
 /**
   * Assembles the routes dealing with the users:
@@ -24,41 +25,60 @@ class UsersRoutes(accountSvc: AccountService,
     //
     // TODO - Part 3 Step 3d: Reset the current session and display a successful logout page.
 
+    @getSession(sessionSvc)
     @cask.get("/login")
-    def connect() =
+    def connect()(session: Session) =
         println("====> ln")
         Layouts.loginPage()
 
+    /*@cask.get("/logged")
+    def logged(username: String) =
+        println("====> logged")
+        Layouts.loginAndRegisterSuccessPage("Logged in successfully", username)
+
+    @cask.get("/registered")
+    def registered(username: String) =
+        println("====> registered")
+        Layouts.loginAndRegisterSuccessPage("Registered successfully", username)*/
+
+   
+    @getSession(sessionSvc)
+    @cask.get("/logout")
+    def logout()(session: Session) =
+        println("====> logout")
+        session.reset()
+        Layouts.logoutSuccessPage()
+
+    @getSession(sessionSvc)
     @cask.postForm("/login")
-    def login(username : cask.FormValue) =
+    def login(username : cask.FormValue)(session: Session) =
         println("====> login")
-        println(Decorators.getSession(sessionSvc))  
-        println(sessionSvc.get("username"))
-        println(username)
-        println(username.value)
+  
         accountSvc.isAccountExisting(username.value) match
             case true =>
                 println("====> login success")
-                val session = sessionSvc.create()
-                Layouts.loginSuccessPage(username.value)
-                //println(Decorators.getSession(sessionSvc).toString())
+                session.setCurrentUser(username.value)
+                Layouts.loginAndRegisterSuccessPage("Logged In successfully", username.value)
+                //cask.Redirect("/logged")
+
             case false =>
                 println("====> login failed")
-                //Layouts.loginFailedPage()
-                //cask.Response(Layouts.loginPage(Some("The specified user does not exists")))
                 Layouts.loginPage(Some("The specified user does not exists"))
 
+    @getSession(sessionSvc)
     @cask.postForm("/register")
-    def register(username: cask.FormValue) =
+    def register(username: cask.FormValue)(session: Session) =
         accountSvc.isAccountExisting(username.value) match
             case true =>
                 Layouts.loginPage(Some("The specified user already exists"))
             case false =>
                 accountSvc.addAccount(username.value, 0.0)
-                val session = sessionSvc.create()
+                //val session = sessionSvc.create()
                 session.setCurrentUser(username.value)
-                val cookie = cask.Cookie("username", username.value)
-                Layouts.loginSuccessPage(username.value)
-                
+                //val currentsession = Decorators.getSession(sessionSvc)
+                //println(currentsession)
+                //val cookie = cask.Cookie("username", username.value)
+                Layouts.loginAndRegisterSuccessPage("Registered successfully", username.value)   
+
     initialize()
 end UsersRoutes
