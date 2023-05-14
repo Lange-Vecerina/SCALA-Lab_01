@@ -1,6 +1,6 @@
 package Web
 
-import Chat.{AnalyzerService, TokenizerService}
+import Chat.{AnalyzerService, TokenizerService, ExprTree}
 import Data.{MessageService, AccountService, SessionService, Session}
 
 import scalatags.Text.all._
@@ -51,6 +51,54 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
     //      store together.
     //
     //      The exceptions raised by the `Parser` will be treated as an error (same as in step 4b)
+
+
+    @getSession(sessionSvc)
+    @cask.postJson("/send")
+    def sendMessage(msg: String)(session: Session) = {
+      val currenUser = session.getCurrentUser
+
+      if (currenUser.isEmpty) {
+        ujson.Obj("success" -> false, "err" -> "No user is logged in")
+      } else if (msg.isEmpty()) {
+        ujson.Obj("success" -> false, "err" -> "The message is empty")
+      } else {
+        val user = currenUser.get
+        val mention = if (msg.startsWith("@bot ")) Some("bot") else None
+        val replyToId = None
+        val id = msgSvc.add(user, msg, mention, None, replyToId)
+        val json = ujson.Obj("success" -> true, "err" -> "", "messages" -> msg)
+        json
+        
+      }
+    }
+
+    @cask.websocket("/subscribe")
+    def subscribe(userName: String)(): cask.WebsocketResult = {
+         if (userName != "haoyi") cask.Response("", statusCode = 403)
+        else cask.WsHandler { channel =>
+        cask.WsActor {
+        case cask.Ws.Text("") => channel.send(cask.Ws.Close())
+        case cask.Ws.Text(data) =>
+          channel.send(cask.Ws.Text(userName + " " + data))
+        }
+      } 
+    }
+    
+
+
+    @getSession(sessionSvc)
+    @cask.get("/clearHistory")
+    def clearHistory()(session: Session) = {
+      val currenUser = session.getCurrentUser
+
+      if (currenUser.isEmpty) {
+        ujson.Obj("success" -> false, "err" -> "No user is logged in")
+      } else {
+        msgSvc.deleteHistory()
+        ujson.Obj("success" -> true, "err" -> "")
+      }
+    }
 
     initialize()
 end MessagesRoutes

@@ -37,11 +37,19 @@ class MessageImpl extends MessageService:
     // TODO - Part 3 Step 4a: Store the messages and the corresponding user in memory.
     //       Implement methods to add new messages, to get the last 20 messages and to delete all existing messages.
 
+    private case class Message(id: Long, sender: Username, msg: MsgContent, mention: Option[Username], exprType: Option[ExprTree], replyToId: Option[Long])
+    private var messages: Seq[Message] = Seq.empty
+    private var messageId: Long = 0
+
+
     override def add(sender: Username, msg: MsgContent, mention: Option[Username] = None, exprType: Option[ExprTree] = None, replyToId: Option[Long] = None): Long =
-        ???
+        messageId += 1
+        messages = messages :+ Message(messageId, sender, msg, mention, exprType, replyToId)
+        messageId
 
     override def getLatestMessages(n: Int) =
-        ???
+        messages.takeRight(n).map(m => (m.sender, m.msg))
 
     override def deleteHistory(): Unit =
-        ???
+        messages = Seq.empty
+        messageId = 0
