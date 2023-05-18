@@ -119,11 +119,17 @@ object Layouts:
             body(
                 navigationBar("/", "Go to message board"),
                 h1("Login"),
-
-                errorTag,
+                errorTag match
+                    case errorMessage if errorMessage.toString.contains("does not exists") => errorMessage
+                    case _ => div(id := "errorDiv", cls := ".errorMsg")(),
+                
                 inputForm("/login", "username", "Username:", "Write your username"),
       
                 h1("Register"),
+                errorTag match
+                    case errorMessage if errorMessage.toString.contains("already exists") => errorMessage
+                    case _ => div(id := "errorDiv", cls := ".errorMsg")(),
+                
                 inputForm("/register", "username", "Username:", "Write your username")
             )
         )

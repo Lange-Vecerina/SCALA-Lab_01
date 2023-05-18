@@ -73,7 +73,7 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
       }
     }
 
-    @cask.websocket("/subscribe")
+    /*@cask.websocket("/subscribe")
     def subscribe(userName: String)(): cask.WebsocketResult = {
          if (userName != "haoyi") cask.Response("", statusCode = 403)
         else cask.WsHandler { channel =>
@@ -83,7 +83,7 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
           channel.send(cask.Ws.Text(userName + " " + data))
         }
       } 
-    }
+    }*/
     
 
 
