@@ -56,8 +56,7 @@ class AnalyzerService(productSvc: ProductService,
             if accountSvc.getAccountBalance(user) < price then
               s"Vous n'avez pas assez d'argent sur votre compte pour effectuer cette commande."
             else {
-              accountSvc.purchase(user, price)
-              s"Voici donc ${reply(session)(products)} ! Cela coûte CHF ${computePrice(products)} et votre nouveau solde est de CHF ${accountSvc.getAccountBalance(user)}."
+              s"Voici donc ${reply(session)(products)} ! Cela coûte CHF ${computePrice(products)} et votre nouveau solde est de CHF ${accountSvc.purchase(user, price)}."
             }
           }
         }
@@ -72,5 +71,5 @@ class AnalyzerService(productSvc: ProductService,
       case Product("biere", brand, quantity) => s"$quantity $brand"
       case Product(name, "", quantity) => s"$quantity $name ${productSvc.getDefaultBrand(name)}"
       case Product(name, brand, quantity) => s"$quantity $name $brand"
-      case null => "Je n'ai pas compris votre demande, pouvez-vous reformuler ?"
+      case _ => "Je n'ai pas compris votre demande, pouvez-vous reformuler ?"
 end AnalyzerService

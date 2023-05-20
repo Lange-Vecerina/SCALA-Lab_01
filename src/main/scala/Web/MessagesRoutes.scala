@@ -3,6 +3,8 @@ package Web
 import Chat.{AnalyzerService, TokenizerService, ExprTree}
 import Data.{MessageService, AccountService, SessionService, Session}
 
+import castor.Context.Simple.global // Cannot find an implicit ExecutionContext. Added this line to fix it.
+
 import scalatags.Text.all._
 /**
   * Assembles the routes dealing with the message board:
@@ -18,6 +20,12 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
                      accountSvc: AccountService,
                      sessionSvc: SessionService)(implicit val log: cask.Logger) extends cask.Routes:
     import Decorators.getSession
+
+    // Variable to store the WebSocket connections to notify when a new message is sent
+    var connections = Set.empty[cask.WsChannelActor]
+
+    // Method to notify all the connections to update the message board
+    def notifyConnections() = connections.foreach(_.send(cask.Ws.Text(msgSvc.getLatestMessages(20).toString)))
 
     @getSession(sessionSvc) // This decorator fills the `(session: Session)` part of the `index` method.
     @cask.get("/")
@@ -41,11 +49,49 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
     //      - The message is empty
     //
     //      If no error occurred, every other user is notified with the last 20 messages
-    //
+    
+    @getSession(sessionSvc)
+    @cask.postJson("/send")
+    def sendMessage(msg: ujson.Value)(session: Session) = {
+      val currenUser = session.getCurrentUser
+
+      if (currenUser.isEmpty) {
+        ujson.Obj("success" -> false, "err" -> "No user is logged in")
+      } else if (msg.str.isEmpty()) {
+        ujson.Obj("success" -> false, "err" -> "The message is empty")
+      } else {
+        val user = currenUser.get
+        // get mention from message if it starts with @, can be any user or bot
+        val mention = if (msg.str.startsWith("@")) Some(msg.str.substring(1, msg.str.indexOf(" "))) else None
+        val replyToId = None
+        val id = msgSvc.add(user, msg.str, mention, None, replyToId)
+      }
+      notifyConnections()
+    }
+
+
     // TODO - Part 3 Step 4c: Process and store the new websocket connection made to `/subscribe`
-    //
+
+    @cask.websocket("/subscribe")
+    def subscribe(): cask.WebsocketResult = {
+      cask.WsHandler { channel =>
+        connections += channel
+        cask.WsActor {
+          case cask.Ws.Close(_, _) => connections -= channel
+        }
+      }
+    }
+    
     // TODO - Part 3 Step 4d: Delete the message history when a GET is made to `/clearHistory`
-    //
+
+    @getSession(sessionSvc)
+    @cask.get("/clearHistory")
+    def clearHistory(): Unit = {
+      msgSvc.deleteHistory()
+      notifyConnections()
+    }
+
+    
     // TODO - Part 3 Step 5: Modify the code of step 4b to process the messages sent to the bot (message
     //      starts with `@bot `). This message and its reply from the bot will be added to the message
     //      store together.
@@ -53,7 +99,7 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
     //      The exceptions raised by the `Parser` will be treated as an error (same as in step 4b)
 
 
-    @getSession(sessionSvc)
+    /*@getSession(sessionSvc)
     @cask.postJson("/send")
     def sendMessage(msg: String)(session: Session) = {
       val currenUser = session.getCurrentUser
@@ -71,7 +117,7 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
         json
         
       }
-    }
+    }*/
 
     /*@cask.websocket("/subscribe")
     def subscribe(userName: String)(): cask.WebsocketResult = {
@@ -87,7 +133,7 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
     
 
 
-    @getSession(sessionSvc)
+    /*@getSession(sessionSvc)
     @cask.get("/clearHistory")
     def clearHistory()(session: Session) = {
       val currenUser = session.getCurrentUser
@@ -98,7 +144,7 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
         msgSvc.deleteHistory()
         ujson.Obj("success" -> true, "err" -> "")
       }
-    }
+    }*/
 
     initialize()
 end MessagesRoutes

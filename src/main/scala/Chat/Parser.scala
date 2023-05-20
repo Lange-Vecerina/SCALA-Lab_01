@@ -50,6 +50,7 @@ class Parser(tokenized: Tokenized):
         Identify(eat(PSEUDO))
       else expected(ETRE, VOULOIR, ME)
     else if curToken == QUEL then
+      readToken()
       eat(ETRE)
       eat(LE)
       eat(PRIX)
@@ -101,11 +102,11 @@ class Parser(tokenized: Tokenized):
     curToken match
       case ET => 
         eat(ET)
-        val second = parseProduct()
+        val second = parseCommand()
         And(first, second)
       case OU => 
         eat(OU)
-        val second = parseProduct()
+        val second = parseCommand()
         Or(first, second)
       case EOL => 
         eat(EOL)

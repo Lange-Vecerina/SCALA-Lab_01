@@ -37,8 +37,14 @@ class AccountImpl extends AccountService:
   // If we have a lot of accounts, we should use a database
   private val accounts: mutable.Map[String, Double] = mutable.Map.empty
 
-  def getAccountBalance(user: String): Double = accounts.getOrElse(user, 0.0)
-  def addAccount(user: String, balance: Double): Unit = accounts.put(user, balance)
+  def getAccountBalance(user: String): Double = 
+    if !isAccountExisting(user) then
+      throw new IllegalArgumentException(s"Account $user does not exist")
+    accounts(user)
+  def addAccount(user: String, balance: Double): Unit = 
+    if isAccountExisting(user) then
+      throw new IllegalArgumentException(s"Account $user already exists")
+    accounts.put(user, balance)
   def isAccountExisting(user: String): Boolean = accounts.contains(user)
   def purchase(user: String, amount: Double): Double = 
     val balance = getAccountBalance(user)

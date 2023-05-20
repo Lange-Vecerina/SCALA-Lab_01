@@ -10,6 +10,10 @@ object ClinksCalculator:
     * @return n!
     */
   def factorial(n: Int): BigInt = {
+    // if n is smaller than 0, throw an exception
+    if n < 0 then
+      throw new IllegalArgumentException("n must be greater than 0")
+    
     n match
       case 0 => 1
       case _ => n * factorial(n-1) 
@@ -22,6 +26,9 @@ object ClinksCalculator:
     * @return n choose k
     */
   def calculateCombination(n: Int, k: Int): Int = {
+    if k > n then
+      return 0
+
     val result = (factorial(n) / (factorial(k) * factorial(n -k))).toInt
     result
   }

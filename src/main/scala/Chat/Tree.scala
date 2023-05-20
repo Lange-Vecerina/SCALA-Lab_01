@@ -19,7 +19,7 @@ object ExprTree:
   case class Identify(pseudo: String) extends ExprTree
   case class And(left: ExprTree, right: ExprTree) extends ExprTree
   case class Or(left: ExprTree, right: ExprTree) extends ExprTree
-  case class Product(name: String, brand: String, quantity: Int) extends ExprTree
+  case class Product(name: String, brand: String, quantity: Int) extends ExprTree // Product with mandatory brand
 
 
 end ExprTree

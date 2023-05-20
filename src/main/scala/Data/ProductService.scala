@@ -31,9 +31,17 @@ class ProductImpl extends ProductService:
   def getPrice(product: ProductName, brand: String): Double = 
     // if the brand is not specified, we use the default brand
     val brandName = if brand.isEmpty then getDefaultBrand(product) else brand
-    products.get((product, brandName)).getOrElse(0.0)
+
+    // if the brand in not in the map, we throw an exception
+    if !products.contains((product, brandName)) then
+      throw new IllegalArgumentException(s"Product $product with brand $brandName does not exist")
+
+    products((product, brandName))
 
   def getDefaultBrand(product: ProductName): BrandName = 
-    defaultBrands.get(product).getOrElse("")
+    if !defaultBrands.contains(product) then
+      throw new IllegalArgumentException(s"Product $product does not exist")
+
+    defaultBrands(product)
 
 end ProductImpl
