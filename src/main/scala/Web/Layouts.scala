@@ -3,6 +3,9 @@ package Web
 import scalatags.Text.all._
 import scalatags.Text.tags2
 import scalatags.Text.tags2.nav
+import Data.MessageService.{MsgContent, Username}
+
+type STag = scalatags.Text.TypedTag[String] // alias for scalatags.Text.TypedTag[String] type
 
 /**
  * Assembles the method used to layout ScalaTags
@@ -10,127 +13,55 @@ import scalatags.Text.tags2.nav
 object Layouts:
     // You can use it to store your methods to generate ScalaTags.
 
-    /**
-      * This method generates the navigation bar.
-      * 
-      */
-    private def navigationBar(ref : String, str : String) = { 
-        nav(
-            a(cls := "nav-brand")("Bot-tender"),
-            div(cls := "nav-item")(a(href := ref, str))
-        )         
-    }
-
-    /**
-      * This method generates the message information such as author, mention and content of the message.
-      * 
-      */
-    private def messageItem(author: String, content: String, mention: String) = {
-        div(cls := "msg")(
-            span(cls := "author")(author),
-            span(cls := "msg-content")(
-                span(cls := "mention")(mention),
-                content
-            ),
-        )
-    }
-
-    /**
-      * This method generates generates a default message when there is no message.
-      * Else, it generates the message information with the method messageItem.
-      * 
-      */
-    private def messageBoard(messages: Seq[(String, String, String)]) = {
-        div(id := "boardMessage")(
-            // If messages is empty, then return a div with a message
-            if messages.isEmpty then
-                div(cls := "msg")("Please wait! the messages are loading !", textAlign.center)
-            else
-                messages.map(msg => messageItem(msg._1, msg._2, msg._3))
-        )
-    }
-
-    /**
-      * This method generates bottom part of the page (the input for the message and a send button to send it).
-      * 
-      */
-    private def contentPage() = {
-        div(cls := "content", id := "content")(
-            messageBoard(Seq.empty),
-            inputForm("/send", "messageInput", "Your message:", "Write your message")
-        )
-    }
-    
-    /**
-      * This method generates the input form.
-      *
-      * @param url The redirection url once the form submitted.
-      * @param labelTag The label of the form.
-      * @param labelMessage The text shown before the input. 
-      * @param placeholderStr The placeholder inside the input area.
-      * @return
-      */
-    def inputForm(url: String, labelTag: String, labelMessage: String, placeholderStr: String) = {
-        form(id := "msgForm", action := url, method := "post")(
-            div(id := "errorDiv", cls := ".errorMsg"),
-            label(`for` := labelTag)(labelMessage),
-            input(id := labelTag, `type` := "text", name := labelTag, placeholder := placeholderStr),
-            input(id := "send", `type` := "submit", value := "Envoyer")
-        )
-    }
+    // --------------------------------
+    // Pages
+    // --------------------------------
 
     /**
       * This method generates the complete page with all other functions above and loads and links the css and 
       * js files to the html page.
       *  
       */
-    def welcomePage(username: Option[String] = None) = {
-        val navBarInfo = username match
-            case Some(value) => ("/logout", "Hello "+ value + " ! ", "Log Out")
-            case None => ("/login", "", "Log In")
-
-        html(
-            head(
-                tags2.title("Bot-tender"),
-                link(rel := "stylesheet", href := "/static/resource/css/main.css"),
-                script(src := "/static/resource/js/main.js")
-            ),
-            body(
-                navigationBar(navBarInfo._1, navBarInfo._2 + navBarInfo._3),
-                contentPage()
+    def homePage(username: Option[String] = None, messages: Seq[(Username, MsgContent)] = Seq.empty): STag = {
+        baseLayout(
+            authNavBar(username),
+            Seq(
+                messageBoard(messages),
+                makeForm(
+                    labelTag = "messageInput",
+                    labelMessage = "Your message:",
+                    placeholderTxt = "Write your message",
+                    doAction = "submitMessageForm(); return false"
+                )
             )
-        )     
+        )    
     }
         
     /**
       * This method generates the login/register page.
       * 
       */
-    def loginPage(errorMessage: Option[String] = None) = {
-        val errorTag = errorMessage match
-            case Some(msg) => div(color.red, id := "errorDiv", cls := ".errorMsg", msg)
-            case None => div(id := "errorDiv", cls := ".errorMsg")()
-        html(
-            head(
-                tags2.title("Bot-tender"),
-                link(rel := "stylesheet", href := "/static/resource/css/main.css"),
-                script(src := "/static/resource/js/main.js")
-            ),
-            body(
-                navigationBar("/", "Go to message board"),
+    def authPage(loginError: Option[String] = None, registerError: Option[String] = None): STag = {
+        baseLayout(
+            defaultNavBar(),
+            Seq(
                 h1("Login"),
-                errorTag match
-                    case errorMessage if errorMessage.toString.contains("does not exists") => errorMessage
-                    case _ => div(id := "errorDiv", cls := ".errorMsg")(),
-                
-                inputForm("/login", "username", "Username:", "Write your username"),
-      
+                makeForm( 
+                    postUrl = "/login",
+                    labelTag = "username", 
+                    labelMessage = "Username:", 
+                    placeholderTxt = "Write your username", 
+                    errorMessage = loginError
+                ),
+
                 h1("Register"),
-                errorTag match
-                    case errorMessage if errorMessage.toString.contains("already exists") => errorMessage
-                    case _ => div(id := "errorDiv", cls := ".errorMsg")(),
-                
-                inputForm("/register", "username", "Username:", "Write your username")
+                makeForm(
+                    postUrl = "/register",
+                    labelTag = "username",
+                    labelMessage = "Username:",
+                    placeholderTxt = "Write your username",
+                    errorMessage = registerError
+                )
             )
         )
     }
@@ -139,15 +70,10 @@ object Layouts:
       * This method generates the login or register success page with the success message of login or register and the username.
       * 
       */
-    def loginAndRegisterSuccessPage(successMessage: String, username: String) = {
-        html(
-            head(
-                tags2.title("Bot-tender"),
-                link(rel := "stylesheet", href := "/static/resource/css/main.css"),
-                script(src := "/static/resource/js/main.js")
-            ),
-            body(
-                navigationBar("/", "Go to message board"),
+    def authSuccessPage(successMessage: String, username: String): STag = {
+        baseLayout(
+            defaultNavBar(),
+            Seq(
                 h1(successMessage),
                 h2("Welcome " + username)
             )
@@ -158,33 +84,113 @@ object Layouts:
       * This method generates the logout page
       *
       */
-    def logoutSuccessPage() = {
-        html(
-            head(
-                tags2.title("Bot-tender"),
-                link(rel := "stylesheet", href := "/static/resource/css/main.css"),
-                script(src := "/static/resource/js/main.js")
-            ),
-            body(
-                navigationBar("/", "Go to message board"),
-                h1("Logged out")
+    def logoutSuccessPage(): STag = {
+        baseLayout(
+            defaultNavBar(),
+            Seq(
+                h1("Logout Success"),
+                h2("You have been logged out")
             )
         )
     }
 
-    def loginFailedPage() = {
+    // --------------------------------
+    // Reusable pieces of HTML code and elements
+    // --------------------------------
+
+    // Head
+    private def header(): STag = 
+        head (
+            tags2.title("Bot-tender"),
+            link(rel := "stylesheet", href := "/static/resource/css/main.css"),
+            script(src := "/static/resource/js/main.js")
+        )
+
+    // Navigation bar
+    private def navBar(ref : String, refText : String, msg : String = ""): STag = {
+        nav(
+            a(cls := "nav-brand")("Bot-tender"),
+            div(cls := "nav-item")(msg + " ", a(href := ref, refText))
+        )         
+    }
+
+    // Default Navigation bar
+    private def defaultNavBar(): STag = {
+        navBar("/", "Go to message board")        
+    }
+
+    // Auth Navigation bar
+    private def authNavBar(username: Option[String] = None): STag = {
+        username match
+            case Some(value) => navBar("/logout", "Log Out", "Hello "+ value + " !")
+            case None => navBar("/login", "Log In")   
+    }
+
+    // Base layout
+    private def baseLayout(nav: STag, content: Seq[STag]): STag = {
         html(
-            head(
-                tags2.title("Bot-tender"),
-                link(rel := "stylesheet", href := "/static/resource/css/main.css"),
-                script(src := "/static/resource/js/main.js")
-            ),
+            header(),
             body(
-                navigationBar("/", "Go to message board"),
-                h1("Login Failed")
+                nav,
+                div(cls := "content", id := "content")(content)
             )
         )
     }
+
+    // Error div
+    private def errorDiv(errorMessage: Option[String] = None): STag = {
+        errorMessage match
+            case Some(msg) => div(color.red, id := "errorDiv", cls := "errorMsg", msg)
+            case _ => div(id := "errorDiv", cls := "errorMsg")()
+    }
+
+    // Message board
+     def messageBoard(messages: Seq[(Username, MsgContent)]): STag = {
+        div(id := "boardMessage")(
+            // If messages is empty, then return a div with a message
+            if messages.isEmpty then
+                div(cls := "msg")("No messages have been sent yet!", textAlign.center)
+            else
+                messages.map(msg => message(msg))
+        )
+    }
+
+    // Message
+    private def message(m: (Username, MsgContent)): STag =
+        div(cls := "msg")(
+            span(cls := "author")(m._1),
+            span(cls := "msg-content")(
+                if m._2.toString().startsWith("@") then {
+                    span(cls := "mention")(m._2.toString().takeWhile(_ != ' '))
+                    m._2.toString().dropWhile(_ != ' ')
+                } else {
+                    m._2
+                }
+            ),
+        )
+
+    // Form
+    private def makeForm(
+        labelTag: String,
+        labelMessage: String,
+        placeholderTxt: String, 
+        errorMessage: Option[String] = None, 
+        postUrl: String = null, 
+        doAction: String = null) : STag = {
+
+            val content = Seq(
+                errorDiv(errorMessage),
+                label(`for` := labelTag)(labelMessage),
+                input(id := labelTag, `type` := "text", name := labelTag, placeholder := placeholderTxt),
+                input(id := "send", `type` := "submit", value := "Envoyer")
+            )
+
+            if postUrl != null then
+                form(id := "msgForm", action := postUrl, method := "post")(content)
+            else
+                form(id := "msgForm", onsubmit := doAction)(content)
+    }
+
 
        
 end Layouts

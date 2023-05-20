@@ -34,9 +34,10 @@ class AnalyzerService(productSvc: ProductService,
 
       // User cases : Identification and balance
       case Identify(pseudo) => {
+        /* Commented to prevent bot command from impacting session user
         if !accountSvc.isAccountExisting(pseudo) then
           accountSvc.addAccount(pseudo, 30.0)
-        session.setCurrentUser(pseudo)
+        session.setCurrentUser(pseudo)*/
         s"Bonjour, ${pseudo.tail} !"
       }
       case GetBalance => {

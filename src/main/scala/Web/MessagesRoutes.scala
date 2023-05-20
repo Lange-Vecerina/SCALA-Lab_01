@@ -6,6 +6,7 @@ import Data.{MessageService, AccountService, SessionService, Session}
 import castor.Context.Simple.global // Cannot find an implicit ExecutionContext. Added this line to fix it.
 
 import scalatags.Text.all._
+import Chat.Parser
 /**
   * Assembles the routes dealing with the message board:
   * - One route to display the home page
@@ -25,16 +26,15 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
     var connections = Set.empty[cask.WsChannelActor]
 
     // Method to notify all the connections to update the message board
-    def notifyConnections() = connections.foreach(_.send(cask.Ws.Text(msgSvc.getLatestMessages(20).toString)))
+    def notifyConnections() = connections.foreach(_.send(cask.Ws.Text(Layouts.messageBoard(msgSvc.getLatestMessages(20)).render)))
 
+    // TODO - Part 3 Step 2: Display the home page (with the message board and the form to send new messages)
     @getSession(sessionSvc) // This decorator fills the `(session: Session)` part of the `index` method.
     @cask.get("/")
     def index()(session: Session) =
-        // TODO - Part 3 Step 2: Display the home page (with the message board and the form to send new messages)
+        val messages = msgSvc.getLatestMessages(20)
+        Layouts.homePage(session.getCurrentUser, messages)
         
-    session.getCurrentUser match
-      case Some(user) => Layouts.welcomePage(Some(user))
-      case None => Layouts.welcomePage()
     
     // TODO - Part 3 Step 4b: Process the new messages sent as JSON object to `/send`. The JSON looks
     //      like this: `{ "msg" : "The content of the message" }`.
@@ -49,24 +49,59 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
     //      - The message is empty
     //
     //      If no error occurred, every other user is notified with the last 20 messages
+    // TODO - Part 3 Step 5: Modify the code of step 4b to process the messages sent to the bot (message
+    //      starts with `@bot `). This message and its reply from the bot will be added to the message
+    //      store together.
+    //
+    //      The exceptions raised by the `Parser` will be treated as an error (same as in step 4b)
     
     @getSession(sessionSvc)
     @cask.postJson("/send")
-    def sendMessage(msg: ujson.Value)(session: Session) = {
+    def sendMessage(msg: ujson.Value)(session: Session): ujson.Obj = {
       val currenUser = session.getCurrentUser
 
       if (currenUser.isEmpty) {
         ujson.Obj("success" -> false, "err" -> "No user is logged in")
-      } else if (msg.str.isEmpty()) {
+      } 
+      if (msg.str.isEmpty()) {
         ujson.Obj("success" -> false, "err" -> "The message is empty")
-      } else {
-        val user = currenUser.get
-        // get mention from message if it starts with @, can be any user or bot
-        val mention = if (msg.str.startsWith("@")) Some(msg.str.substring(1, msg.str.indexOf(" "))) else None
-        val replyToId = None
-        val id = msgSvc.add(user, msg.str, mention, None, replyToId)
-      }
+      } 
+      
+      val user = currenUser.get
+      // get mention from message if it starts with @, can be any user or bot
+      val mention = if (msg.str.startsWith("@")) Some(msg.str.substring(1, msg.str.indexOf(" "))) else None
+
+      // if mention is bot, get the expression and evaluate it
+      if (mention == Some("Bot")) {
+        try {
+          // get the reply of the bot
+          val tokenized = tokenizerSvc.tokenize(msg.str.substring(msg.str.indexOf(" ") + 1))
+          val parser = new Parser(tokenized)
+          val expr = parser.parsePhrases()
+          val reply = analyzerSvc.reply(session)(expr)
+
+          val id = msgSvc.add(user, msg.str, mention, Some(expr))
+
+          // notify for first message
+          notifyConnections()
+
+          // process the reply
+          msgSvc.add("BotTender", reply, None, None, Some(id))
+
+          // notify for second message
+          notifyConnections()
+
+          return ujson.Obj("success" -> true, "err" -> "")
+
+        } catch {
+          case e: Exception => return ujson.Obj("success" -> false, "err" -> e.getMessage)
+        }
+      } 
+
+      msgSvc.add(user, msg.str, mention)
       notifyConnections()
+      ujson.Obj("success" -> true, "err" -> "")
+    
     }
 
 
@@ -92,59 +127,6 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
     }
 
     
-    // TODO - Part 3 Step 5: Modify the code of step 4b to process the messages sent to the bot (message
-    //      starts with `@bot `). This message and its reply from the bot will be added to the message
-    //      store together.
-    //
-    //      The exceptions raised by the `Parser` will be treated as an error (same as in step 4b)
-
-
-    /*@getSession(sessionSvc)
-    @cask.postJson("/send")
-    def sendMessage(msg: String)(session: Session) = {
-      val currenUser = session.getCurrentUser
-
-      if (currenUser.isEmpty) {
-        ujson.Obj("success" -> false, "err" -> "No user is logged in")
-      } else if (msg.isEmpty()) {
-        ujson.Obj("success" -> false, "err" -> "The message is empty")
-      } else {
-        val user = currenUser.get
-        val mention = if (msg.startsWith("@bot ")) Some("bot") else None
-        val replyToId = None
-        val id = msgSvc.add(user, msg, mention, None, replyToId)
-        val json = ujson.Obj("success" -> true, "err" -> "", "messages" -> msg)
-        json
-        
-      }
-    }*/
-
-    /*@cask.websocket("/subscribe")
-    def subscribe(userName: String)(): cask.WebsocketResult = {
-         if (userName != "haoyi") cask.Response("", statusCode = 403)
-        else cask.WsHandler { channel =>
-        cask.WsActor {
-        case cask.Ws.Text("") => channel.send(cask.Ws.Close())
-        case cask.Ws.Text(data) =>
-          channel.send(cask.Ws.Text(userName + " " + data))
-        }
-      } 
-    }*/
-    
-
-
-    /*@getSession(sessionSvc)
-    @cask.get("/clearHistory")
-    def clearHistory()(session: Session) = {
-      val currenUser = session.getCurrentUser
-
-      if (currenUser.isEmpty) {
-        ujson.Obj("success" -> false, "err" -> "No user is logged in")
-      } else {
-        msgSvc.deleteHistory()
-        ujson.Obj("success" -> true, "err" -> "")
-      }
-    }*/
 
     initialize()
 end MessagesRoutes

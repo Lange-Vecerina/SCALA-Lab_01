@@ -34,17 +34,20 @@ trait MessageService:
     def deleteHistory(): Unit
 
 class MessageImpl extends MessageService:
-    // TODO - Part 3 Step 4a: Store the messages and the corresponding user in memory.
-    //       Implement methods to add new messages, to get the last 20 messages and to delete all existing messages.
 
     private case class Message(id: Long, sender: Username, msg: MsgContent, mention: Option[Username], exprType: Option[ExprTree], replyToId: Option[Long])
-    private var messages: Seq[Message] = Seq.empty
-    private var messageId: Long = 0
+    private var messages: Seq[Message] = Seq.empty  // Messages are stored in memory here
+    private var messageId: Long = 0                 // The id of the last message added
+    private val maxHistorySize = 50                 // The maximum number of messages to store in memory (to avoid memory overload)
 
 
     override def add(sender: Username, msg: MsgContent, mention: Option[Username] = None, exprType: Option[ExprTree] = None, replyToId: Option[Long] = None): Long =
         messageId += 1
         messages = messages :+ Message(messageId, sender, msg, mention, exprType, replyToId)
+
+        // if the history is too big, remove the oldest message
+        if (messages.size > maxHistorySize) messages = messages.tail
+
         messageId
 
     override def getLatestMessages(n: Int) =

@@ -98,20 +98,21 @@ class Parser(tokenized: Tokenized):
    *  returns first if there is one product, or a tree of And or Or if there is more than one product.
    */
   def parseCommand() : ExprTree =
-    val first = parseProduct()
-    curToken match
-      case ET => 
-        eat(ET)
-        val second = parseCommand()
-        And(first, second)
-      case OU => 
-        eat(OU)
-        val second = parseCommand()
-        Or(first, second)
-      case EOL => 
-        eat(EOL)
-        first
-      case _ => expected(ET, OU, EOL)
+
+    def loop(first: ExprTree) : ExprTree =
+      curToken match
+        case ET => 
+          eat(ET)
+          loop(And(first, parseProduct()))
+        case OU => 
+          eat(OU)
+          loop(Or(first, parseProduct()))
+        case EOL => 
+          eat(EOL)
+          first
+        case _ => expected(ET, OU, EOL)
+
+    loop(parseProduct())
 
 end Parser
 

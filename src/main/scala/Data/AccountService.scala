@@ -39,13 +39,23 @@ class AccountImpl extends AccountService:
 
   def getAccountBalance(user: String): Double = 
     if !isAccountExisting(user) then
-      throw new IllegalArgumentException(s"Account $user does not exist")
+      throw new IllegalArgumentException(s"The specified user does not exists")
     accounts(user)
+
+
   def addAccount(user: String, balance: Double): Unit = 
     if isAccountExisting(user) then
-      throw new IllegalArgumentException(s"Account $user already exists")
+      throw new IllegalArgumentException(s"The specified user already exists")
+
+    if user.isEmpty then
+      throw new IllegalArgumentException(s"Please specify a non empty user name")
+
     accounts.put(user, balance)
+
+
   def isAccountExisting(user: String): Boolean = accounts.contains(user)
+
+  
   def purchase(user: String, amount: Double): Double = 
     val balance = getAccountBalance(user)
     val newBalance = balance - amount // check if balance is enough is done by the caller
