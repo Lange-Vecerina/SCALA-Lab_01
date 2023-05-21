@@ -61,10 +61,10 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
       val currenUser = session.getCurrentUser
 
       if (currenUser.isEmpty) {
-        ujson.Obj("success" -> false, "err" -> "No user is logged in")
+        return ujson.Obj("success" -> false, "err" -> "No user is logged in")
       } 
       if (msg.str.isEmpty()) {
-        ujson.Obj("success" -> false, "err" -> "The message is empty")
+        return ujson.Obj("success" -> false, "err" -> "The message is empty")
       } 
       
       val user = currenUser.get
