@@ -26,7 +26,7 @@ object Layouts:
         baseLayout(
             authNavBar(username),
             Seq(
-                messageBoard(messages),
+                div(id := "boardMessage")(messageBoardContent(messages)),
                 makeForm(
                     labelTag = "messageInput",
                     labelMessage = "Your message:",
@@ -145,14 +145,12 @@ object Layouts:
     }
 
     // Message board
-     def messageBoard(messages: Seq[(Username, MsgContent)]): STag = {
-        div(id := "boardMessage")(
-            // If messages is empty, then return a div with a message
-            if messages.isEmpty then
-                div(cls := "msg")("No messages have been sent yet!", textAlign.center)
-            else
-                messages.map(msg => message(msg))
-        )
+     def messageBoardContent(messages: Seq[(Username, MsgContent)]): Seq[STag] = {
+        // If messages is empty, then return a div with a message
+        if messages.isEmpty then
+            Seq(div(cls := "msg")("No messages have been sent yet!", textAlign.center))
+        else
+            messages.map(msg => message(msg))
     }
 
     // Message

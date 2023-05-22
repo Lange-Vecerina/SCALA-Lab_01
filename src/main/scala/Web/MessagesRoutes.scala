@@ -26,7 +26,7 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
     var connections = Set.empty[cask.WsChannelActor]
 
     // Method to notify all the connections to update the message board
-    def notifyConnections() = connections.foreach(_.send(cask.Ws.Text(Layouts.messageBoard(msgSvc.getLatestMessages(20)).render)))
+    def notifyConnections() = connections.foreach(_.send(cask.Ws.Text(Layouts.messageBoardContent(msgSvc.getLatestMessages(20)).render)))
 
     // TODO - Part 3 Step 2: Display the home page (with the message board and the form to send new messages)
     @getSession(sessionSvc) // This decorator fills the `(session: Session)` part of the `index` method.
