@@ -32,6 +32,8 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
     @getSession(sessionSvc) // This decorator fills the `(session: Session)` part of the `index` method.
     @cask.get("/")
     def index()(session: Session) =
+        session.getCurrentUser.map(u => s"You are logged in as ${u} !")
+               .getOrElse("You are not logged in !")
         val messages = msgSvc.getLatestMessages(20)
         Layouts.homePage(session.getCurrentUser, messages)
         
@@ -127,6 +129,7 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
     }
 
     
+
 
     initialize()
 end MessagesRoutes
