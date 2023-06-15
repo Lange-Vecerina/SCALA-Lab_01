@@ -7,6 +7,7 @@ import Utils.FutureOps.*
 import concurrent.duration.*
 import Data.MessageService
 import scalatags.Text.all.stringFrag
+import Data.ProductImpl.getPrice
 
 implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
@@ -100,19 +101,36 @@ class AnalyzerService(productSvc: ProductService,
         session.getCurrentUser match {
           case None => "Veuillez d'abord vous identifier."
           case Some(user) => {
-            // Add message saying that order is being prepared
-            messageSvc.add("BotTender", "Votre commande est en cours de préparation.", Some(user))
+            // If user is too poor, return error message
+            if accountSvc.getAccountBalance(user) < computePrice(products) then
+              s"Vous n'avez pas assez d'argent sur votre compte pour effectuer cette commande."
 
-            // Prepare products. If successful, compute price of the value and purchase. If not, return error message.
-            val prepared = prepareProducts(products).recover()
+            // Prepare products. Wait of the preparation to be done to get the result.
+            val prepared = prepareProducts(products)
 
-
-            // val price = computePrice(products)
-            // if accountSvc.getAccountBalance(user) < price then
-            //   s"Vous n'avez pas assez d'argent sur votre compte pour effectuer cette commande."
-            // else {
-            //   s"Voici donc ${reply(session)(products)} ! Cela coûte CHF ${computePrice(products)} et votre nouveau solde est de CHF ${accountSvc.purchase(user, price)}."
-            // }
+            // If prepared successfully, get the price and purchase
+            prepared.transform {
+              case Success(preparedProducts) => {
+                val price = computePrice(preparedProducts)
+                if preparedProducts == products then 
+                  messageSvc.add("BotTender", 
+                    s"La commande de ${reply(session)(products)} est prête ! Cela coûte CHF ${computePrice(preparedProducts)} et votre nouveau solde est de CHF ${accountSvc.purchase(user, price)}.",
+                    Some(user))
+                else 
+                  messageSvc.add("BotTender", 
+                    s"La commande de ${reply(session)(products)} est partiellement prête! Voici ${reply(session)(preparedProducts)}. Cela coûte CHF ${computePrice(preparedProducts)} et votre nouveau solde est de CHF ${accountSvc.purchase(user, price)}.",
+                    Some(user))
+                }
+                Success(preparedProducts)
+              case Failure(_) => {
+                messageSvc.add("BotTender", 
+                  s"La commande de ${reply(session)(products)} ne peut pas être délivrée.",
+                  Some(user))
+                Failure(new Exception("Error while preparing products"))
+              }
+            }
+            
+            s"Votre commande est en cours de préparation."
           }
         }
       }
