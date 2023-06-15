@@ -80,7 +80,7 @@ class MessagesRoutes(tokenizerSvc: TokenizerService,
           val tokenized = tokenizerSvc.tokenize(msg.str.substring(msg.str.indexOf(" ") + 1))
           val parser = new Parser(tokenized)
           val expr = parser.parsePhrases()
-          val reply = analyzerSvc.reply(session)(expr)
+          val reply = analyzerSvc.reply(session, notifyConnections _)(expr)
 
           val id = msgSvc.add(user, msg.str, mention, Some(expr))
 

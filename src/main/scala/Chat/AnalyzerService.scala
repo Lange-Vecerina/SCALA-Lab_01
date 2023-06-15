@@ -33,6 +33,7 @@ class AnalyzerService(productSvc: ProductService,
   case And(left, right) =>
     val preparedLeftFuture = prepareProducts(left)
     val preparedRightFuture = prepareProducts(right)
+
     preparedLeftFuture
       .flatMap(pLeft => preparedRightFuture
         .map(pRight => And(pLeft, pRight))
@@ -62,7 +63,10 @@ class AnalyzerService(productSvc: ProductService,
     }
     // call the function
     prepareOne(0, quantity)
-      .map(_ => Product(name, brand, quantity))
+      .flatMap(qty => qty match {
+        case 0 => Future.failed(new Exception("Product not available"))
+        case _ => Future.successful(Product(name, brand, qty))
+      })
   }
 
 
@@ -70,7 +74,7 @@ class AnalyzerService(productSvc: ProductService,
     * Return the output text of the current node, in order to write it in console.
     * @return the output text of the current node
     */
-  def reply(session: Session)(t: ExprTree): String =
+  def reply(session: Session, callback: () => Unit = () => {})(t: ExprTree): String =
     // you can use this to avoid having to pass the session when doing recursion
     val inner: ExprTree => String = reply(session)
     t match
@@ -90,7 +94,7 @@ class AnalyzerService(productSvc: ProductService,
       case GetBalance => {
         session.getCurrentUser match {
           case None => "Veuillez d'abord vous identifier."
-          case Some(user) => s"Le montant acutel de votre solde est de CHF ${accountSvc.getAccountBalance(user)}."
+          case Some(user) => s"Le montant actuel de votre solde est de CHF ${accountSvc.getAccountBalance(user)}."
         }
       }
 
@@ -115,16 +119,19 @@ class AnalyzerService(productSvc: ProductService,
                   messageSvc.add("BotTender", 
                     s"La commande de ${reply(session)(products)} est prête ! Cela coûte CHF ${computePrice(preparedProducts)} et votre nouveau solde est de CHF ${accountSvc.purchase(user, price)}.",
                     Some(user))
+                  callback()
                 else 
                   messageSvc.add("BotTender", 
                     s"La commande de ${reply(session)(products)} est partiellement prête! Voici ${reply(session)(preparedProducts)}. Cela coûte CHF ${computePrice(preparedProducts)} et votre nouveau solde est de CHF ${accountSvc.purchase(user, price)}.",
                     Some(user))
-                }
+                  callback()
                 Success(preparedProducts)
+              }
               case Failure(_) => {
                 messageSvc.add("BotTender", 
                   s"La commande de ${reply(session)(products)} ne peut pas être délivrée.",
                   Some(user))
+                callback()
                 Failure(new Exception("Error while preparing products"))
               }
             }

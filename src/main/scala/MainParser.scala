@@ -49,7 +49,7 @@ object MainParser:
     val productSvc: ProductService = new ProductImpl()
     val accountSvc: AccountService = new AccountImpl()
     val sessionSvc: SessionService = new SessionImpl()
-    val analyzerSvc: AnalyzerService = new AnalyzerService(productSvc, accountSvc)
+    val analyzerSvc: AnalyzerService = new AnalyzerService(productSvc, accountSvc, new MessageImpl())
 
     println("Bienvenue au Chill-Out !")
 
