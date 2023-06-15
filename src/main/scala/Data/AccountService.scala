@@ -1,6 +1,7 @@
 package Data
 
 import scala.collection.mutable
+import scala.collection.concurrent.TrieMap
 
 trait AccountService:
   /**
@@ -35,7 +36,7 @@ trait AccountService:
 class AccountImpl extends AccountService:
   // Store in a map the balance of each account
   // If we have a lot of accounts, we should use a database
-  private val accounts: mutable.Map[String, Double] = mutable.Map.empty
+  private val accounts: TrieMap[String, Double] = TrieMap.empty
 
   def getAccountBalance(user: String): Double = 
     if !isAccountExisting(user) then
@@ -57,9 +58,12 @@ class AccountImpl extends AccountService:
 
   
   def purchase(user: String, amount: Double): Double = 
-    val balance = getAccountBalance(user)
-    val newBalance = balance - amount // check if balance is enough is done by the caller
-    accounts.put(user, newBalance)
-    newBalance
+    accounts.updateWith(user) {
+      case Some(balance) if balance >= amount => Some(balance - amount)
+      case _ => None // Return None if balance is not enough, indicating failure
+    } match {
+      case Some(newBalance) => newBalance
+      case None => throw new IllegalStateException("Insufficient balance for purchase")
+    }
 
 end AccountImpl
