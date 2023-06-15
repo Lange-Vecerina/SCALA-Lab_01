@@ -7,7 +7,6 @@ import Utils.FutureOps.*
 import concurrent.duration.*
 import Data.MessageService
 import scalatags.Text.all.stringFrag
-import Data.ProductImpl.getPrice
 
 implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
@@ -129,7 +128,7 @@ class AnalyzerService(productSvc: ProductService,
                 Failure(new Exception("Error while preparing products"))
               }
             }
-            
+
             s"Votre commande est en cours de préparation."
           }
         }
