@@ -29,6 +29,13 @@ class AnalyzerService(productSvc: ProductService,
     case _ => 0.0
   }
 
+  /**
+    * prepare the different products in parallel, and return the result of the preparation.
+    * This means it will parcours the tree, and for each different product, it will prepare it in parallel. 
+    *
+    * @param t the tree to prepare.
+    * @return a future tree with the products that could be prepared.
+    */
   def prepareProducts(t: ExprTree): Future[ExprTree] = t match {
   case And(left, right) =>
     val preparedLeftFuture = prepareProducts(left)
@@ -42,6 +49,7 @@ class AnalyzerService(productSvc: ProductService,
   case Or(left, right) =>
     val preparedLeftFuture = prepareProducts(left)
     val preparedRightFuture = prepareProducts(right)
+    
     preparedLeftFuture
       .flatMap(pLeft => preparedRightFuture
         .map(pRight => And(pLeft, pRight))
@@ -52,6 +60,14 @@ class AnalyzerService(productSvc: ProductService,
   case _ => Future.successful(t)
   }
 
+  /**
+    * prepare a product sequentially, and return the result of the preparation. Called by prepareProducts.
+    *
+    * @param name the name of the product
+    * @param brand the brand of the product
+    * @param quantity the quantity of the product
+    * @return A product with the name, brand and quantity given in parameter that succeeded to be prepared.
+    */
   def prepareProductSequentially(name: String, brand: String, quantity: Int): Future[ExprTree] = {
     // function to prepare a product
     def prepareOne(qtyDone : Int, qtyLeft : Int): Future[Int] = {
@@ -115,27 +131,29 @@ class AnalyzerService(productSvc: ProductService,
             prepared.transform {
               case Success(preparedProducts) => {
                 val price = computePrice(preparedProducts)
+                // If prepared successfully, get the price and purchase
                 if preparedProducts == products then 
                   messageSvc.add("BotTender", 
                     s"La commande de ${reply(session)(products)} est prête ! Cela coûte CHF ${computePrice(preparedProducts)} et votre nouveau solde est de CHF ${accountSvc.purchase(user, price)}.",
                     Some(user))
-                  callback()
+                  callback() //callback used to update the UI
                 else 
+                  // If not all products are available, return the message with the available products
                   messageSvc.add("BotTender", 
                     s"La commande de ${reply(session)(products)} est partiellement prête! Voici ${reply(session)(preparedProducts)}. Cela coûte CHF ${computePrice(preparedProducts)} et votre nouveau solde est de CHF ${accountSvc.purchase(user, price)}.",
-                    Some(user))
-                  callback()
+                    Some(user)) 
+                  callback() //callback used to update the UI
                 Success(preparedProducts)
               }
               case Failure(_) => {
                 messageSvc.add("BotTender", 
                   s"La commande de ${reply(session)(products)} ne peut pas être délivrée.",
                   Some(user))
-                callback()
+                callback() //callback used to update the UI
                 Failure(new Exception("Error while preparing products"))
               }
             }
-
+            // returned directly in opposition of the the commands. The commands are only returned if the future is completed.
             s"Votre commande est en cours de préparation."
           }
         }
